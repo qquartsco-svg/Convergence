@@ -22,17 +22,18 @@ class MethodDynamics:
     convergence_order: float          # p (이차=2.0, 선형=1.0)
     lyapunov_exponent: float          # λ (음수=안정, 양수=발산)
     efficiency_bits_per_iter: float   # bits of precision per iteration
-    predicted_steps_to_target: Optional[int]  # 목표 정밀도까지 남은 단계
+    predicted_steps_to_target: Optional[int]  # 목표 정밀도 도달 예상 총 단계 수
     stability: str                    # SUPERLINEAR | LINEAR | SUBLINEAR | DIVERGING
     target_error: float = 1e-12      # 예측 기준 오차
 
     def summary_line(self) -> str:
-        pred = str(self.predicted_steps_to_target) if self.predicted_steps_to_target else "—"
+        # None이면 예측 불가 표시 — 0은 유효한 값이므로 is None으로만 구분
+        pred = "—" if self.predicted_steps_to_target is None else str(self.predicted_steps_to_target)
         return (
             f"  {self.method_name:22s} | p={self.convergence_order:5.2f} "
             f"| λ={self.lyapunov_exponent:+.3f} "
             f"| {self.efficiency_bits_per_iter:5.2f} bits/iter "
-            f"| 목표까지 {pred}단계 "
+            f"| 총 {pred}단계 예측 "
             f"| {self.stability}"
         )
 
@@ -55,14 +56,25 @@ class ConvergenceDynamicsReport:
             return
         best = max(self.methods, key=lambda m: m.efficiency_bits_per_iter)
         self.best_method = best.method_name
+        n = len(self.methods)
 
-        stabilities = {m.stability for m in self.methods}
-        diverging_count = sum(1 for m in self.methods if m.stability == "DIVERGING")
+        # 발산 비율 패널티
+        diverging_ratio = sum(1 for m in self.methods if m.stability == "DIVERGING") / n
 
-        max_eff = max(m.efficiency_bits_per_iter for m in self.methods)
-        base = best.efficiency_bits_per_iter / max(max_eff, 1e-9)
-        penalty = 0.4 * (diverging_count / len(self.methods))
-        self.dynamic_health = max(0.0, min(1.0, base - penalty))
+        # 평균 수렴 차수 점수 (p=2가 이상적 → 정규화)
+        avg_order = sum(m.convergence_order for m in self.methods) / n
+        order_score = min(1.0, avg_order / 2.0)
+
+        # 평균 리야푸노프 점수 (λ=-5 이하면 1.0, 0 이상이면 0.0)
+        avg_lya = sum(m.lyapunov_exponent for m in self.methods) / n
+        lya_score = max(0.0, min(1.0, -avg_lya / 5.0))
+
+        # 최고 효율 방법의 bits/iter 점수 (10 bits/iter를 기준 상한으로)
+        eff_score = min(1.0, best.efficiency_bits_per_iter / 10.0)
+
+        # 종합: 효율 40% + 수렴차수 30% + 리야푸노프 30% — 발산 패널티
+        base = 0.40 * eff_score + 0.30 * order_score + 0.30 * lya_score
+        self.dynamic_health = max(0.0, min(1.0, base - 0.5 * diverging_ratio))
 
         if self.dynamic_health >= 0.85:
             self.convergence_verdict = "HEALTHY"

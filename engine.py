@@ -91,12 +91,14 @@ class ConvergenceDynamicsEngine:
         d = self.analyze(error_series, method_name=label)
         dh = self.health(d)
         stable = d.stability != "DIVERGING"
-        verdict = (
-            "SAFE"     if stable and dh >= 0.7 else
-            "CAUTION"  if stable and dh >= 0.4 else
-            "WARNING"  if not stable             else
-            "CRITICAL"
-        )
+        if stable and dh >= 0.7:
+            verdict = "SAFE"
+        elif stable and dh >= 0.4:
+            verdict = "CAUTION"
+        elif (not stable) and dh >= 0.2:
+            verdict = "WARNING"
+        else:
+            verdict = "CRITICAL"
         return {
             "stable":         stable,
             "lyapunov":       d.lyapunov_exponent,

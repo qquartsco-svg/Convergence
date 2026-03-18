@@ -52,15 +52,16 @@ $$\eta = \frac{\log_2\!\left(\dfrac{e_0}{e_n}\right)}{n} \quad \text{[bits/itera
 - 연분수: $\eta \approx 2.36$ bits/iter
 - Leibniz(π): $\eta \approx 0.65$ bits/iter
 
-### 4. 잔여 단계 예측 (Predicted Steps) — $\hat{n}$
+### 4. 목표 도달 예상 총 단계 수 (Predicted Total Steps) — $\hat{n}$
 
 마지막 두 오차로 감소율 $r = e_n / e_{n-1}$ 를 추정하면:
 
 $$\hat{n} = n + \left\lceil \frac{\log(e^* / e_n)}{\log r} \right\rceil$$
 
 - $e^*$ : 목표 오차 (기본값 $10^{-12}$)
-- Leibniz(π): $\hat{n} \approx 9842$ 단계 더 필요
-- Newton(√2): $\hat{n} \approx 6$ 단계면 충분
+- $\hat{n}$ 은 **현재까지 진행한 단계를 포함한 총 단계 수** (남은 단계 수가 아님)
+- Leibniz(π): $\hat{n} \approx 9842$ (현재 500단계 진행 시 약 9342단계 더 필요)
+- Newton(√2): $\hat{n} \approx 6$ (6단계 시점에서 이미 도달)
 
 ### 5. 동역학 건강도 (Dynamic Health) — $H_d$
 
@@ -107,17 +108,47 @@ irrational_algebra             →  해석기  (상태 구조 분석, structural
 from convergence import ConvergenceDynamicsEngine
 
 engine = ConvergenceDynamicsEngine()
+```
 
-# 무리수 수렴 분석
-engine.diagnose("√2", {"Newton": result_newton, "연분수": result_cf})
+**입력 모드 1 — IrrationalResult 직접 전달**  
+`IrrationalApprox_Engine`이 반환한 결과 객체를 그대로 넘긴다.  
+내부에서 `result.history[].error` 를 자동 추출한다.
 
-# Observer Ω 시계열 분석
+```python
+# IrrationalApprox_Engine 연동
+from IrrationalApprox_Engine import IrrationalApproxEngine
+irr = IrrationalApproxEngine()
+result = irr.sqrt(2)                              # IrrationalResult 반환
+
+engine.diagnose("√2", {"Newton": result})
+```
+
+**입력 모드 2 — 순수 오차 수열 `List[float]`**  
+무리수와 무관한 어떤 오차 시계열도 분석 가능하다.
+
+```python
+# Observer Ω 수렴 분석
+omega_history = [0.50, 0.61, 0.70, 0.76, 0.80, 0.83, 0.86]
 omega_errors = [abs(1.0 - o) for o in omega_history]
 d = engine.analyze(omega_errors, method_name="Observer-Ω")
 
 # KEMET 수치 안정성 진단
-status = engine.kemet_stability_check(error_series)
-# → {"verdict": "SAFE", "lyapunov": -2.1, "stability": "LINEAR"}
+status = engine.kemet_stability_check(kemet_error_series)
+# → {"verdict": "SAFE" | "CAUTION" | "WARNING" | "CRITICAL", ...}
+```
+
+**irrational_algebra 연동**
+
+```python
+# 실제 경로: cognitive_kernel.engines.irrational_algebra
+import sys
+sys.path.insert(0, "/path/to/Core/Cognitive_Kernel/src")
+from cognitive_kernel.engines.irrational_algebra.irrational_algebra_engine import IrrationalAlgebraEngine
+
+dh = engine.health(d)   # 0~1
+algebra = IrrationalAlgebraEngine()
+snapshot = algebra.analyze(state_vector, dynamic_health=dh)
+print(snapshot.structural_health)
 ```
 
 ---
