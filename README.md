@@ -1,4 +1,4 @@
-# Convergence
+# ConvergenceDynamics_Engine
 
 **수렴 과정 동역학 분석 엔진**
 
@@ -19,6 +19,16 @@
 | **→ 이 엔진** | 근사 과정(history)의 수렴 동역학 자체를 판정한다 |
 
 대상은 무리수가 아니라 **수렴 과정**이다.
+
+### 수렴과 인력은 같은가?
+
+완전히 같지는 않다.
+
+- `인력`은 상태를 특정 중심, 경계, 퍼텐셜 우물 쪽으로 끌어당기는 작용이다
+- `수렴`은 그 결과로 오차나 궤적이 점점 줄어드는 현상이다
+
+따라서 이 엔진은 `인력`을 직접 계산하기보다,
+그 인력이 실제로 **수렴을 만들어내고 있는지**를 동역학적으로 판정한다.
 
 ---
 
@@ -93,7 +103,7 @@ IrrationalApprox_Engine       →  계산기  (무리수 수렴 생성, history[
           │
           │  history[] = [e₀, e₁, e₂, ...]
           ▼
-Convergence                   →  판정기  (수렴 동역학 분석)  ← 여기
+ConvergenceDynamics_Engine    →  판정기  (수렴 동역학 분석)  ← 여기
           │
           │  dynamic_health ∈ [0, 1]
           ▼
@@ -105,7 +115,7 @@ irrational_algebra             →  해석기  (상태 구조 분석, structural
 ## 활용
 
 ```python
-from convergence import ConvergenceDynamicsEngine
+from ConvergenceDynamics_Engine import ConvergenceDynamicsEngine
 
 engine = ConvergenceDynamicsEngine()
 ```
@@ -115,7 +125,7 @@ engine = ConvergenceDynamicsEngine()
 내부에서 `result.history[].error` 를 자동 추출한다.
 
 ```python
-# IrrationalApprox_Engine 연동
+# 같은 40_SPATIAL_LAYER 안에서 직접 import
 from IrrationalApprox_Engine import IrrationalApproxEngine
 irr = IrrationalApproxEngine()
 result = irr.sqrt(2)                              # IrrationalResult 반환
@@ -137,6 +147,30 @@ status = engine.kemet_stability_check(kemet_error_series)
 # → {"verdict": "SAFE" | "CAUTION" | "WARNING" | "CRITICAL", ...}
 ```
 
+**입력 모드 3 — Ring Attractor / Spin-Ring Coupling 연동**
+
+`CookiieBrain`의 물리-인지 커플링은 `phase_error` 시계열을 직접 제공한다.
+이 값은 `ConvergenceDynamics_Engine`이 바로 판정할 수 있는 오차 수열이다.
+
+```python
+from ConvergenceDynamics_Engine import ConvergenceDynamicsEngine
+
+engine = ConvergenceDynamicsEngine()
+
+# coupling.run(...) 결과에서 phase_error만 추출
+phase_errors = [state.phase_error for state in coupling_states]
+d = engine.analyze(phase_errors, method_name="Spin-Ring phase lock")
+
+print(d.stability)
+print(d.lyapunov_exponent)
+print(engine.health(d))
+```
+
+의미:
+- `lyapunov_exponent < 0` 이면 물리축과 링 위상이 안정적으로 잠긴다
+- `stability == "DIVERGING"` 이면 위상 잠금이 깨지고 있다는 뜻이다
+- `dynamic_health`는 정적 구조 해석기(`irrational_algebra`)에 다시 주입할 수 있다
+
 **irrational_algebra 연동**
 
 ```python
@@ -151,16 +185,25 @@ snapshot = algebra.analyze(state_vector, dynamic_health=dh)
 print(snapshot.structural_health)
 ```
 
+**Observer Ω 연동**
+
+Observer 계열의 `Ω` 시계열도 같은 방식으로 다룰 수 있다.
+즉 이 엔진은 무리수 전용이 아니라, 브레인 상태공간의 모든 "수렴하는 값"을 판정하는 범용 동역학 판정기다.
+
 ---
 
 ## 파일 구조
 
 ```
-Convergence/
+ConvergenceDynamics_Engine/
 ├── engine.py     — ConvergenceDynamicsEngine (메인 클래스)
 ├── analyzer.py   — convergence_order, lyapunov_exponent, efficiency, predict_steps
 ├── models.py     — MethodDynamics, ConvergenceDynamicsReport
-└── __init__.py   — 공개 API
+├── __init__.py   — 공개 API
+├── tests/        — 회귀 테스트
+├── README.md
+├── BLOCKCHAIN_INFO.md
+└── PHAM_BLOCKCHAIN_LOG.md
 ```
 
 ---
@@ -188,3 +231,18 @@ Python >= 3.10
 표준 라이브러리만 사용 (math, dataclasses, typing)
 외부 패키지 없음
 ```
+
+---
+
+## 🔐 PHAM 블록체인 서명
+
+이 엔진은 `ENGINE_HUB`의 다른 독립 엔진들과 같은 PHAM 서명 원칙을 따른다.
+
+| 항목 | 내용 |
+|------|------|
+| **라이선스** | MIT License |
+| **기여도 상한** | GNJz(Qquarts) 자발적 기여도 제한 — 블록체인 기반 최대 6% |
+| **검증 방법** | 블록체인으로 기여도·출처 영구 기록 및 검증 가능 |
+| **사용 제한** | 없음 (MIT) |
+
+> 서명 상세: [BLOCKCHAIN_INFO.md](./BLOCKCHAIN_INFO.md)
