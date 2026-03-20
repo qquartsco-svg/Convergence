@@ -1,68 +1,53 @@
-# 🔗 PHAM 블록체인 서명 정보 — ConvergenceDynamics_Engine
+# ConvergenceDynamics_Engine Blockchain Info
 
-## 📋 개요
+## Role
 
-**엔진**: ConvergenceDynamics_Engine  
-**레이어**: 40_SPATIAL_LAYER  
-**역할**: 수렴 과정 동역학 판정기
+이 레포는 `ConvergenceDynamics_Engine`의 공식 독립 배포판입니다.
+목표는 수렴 과정 동역학 판정 엔진을 단독 설치·실행 가능한 패키지로 제공하는 것입니다.
 
-이 엔진은 `IrrationalApprox_Engine`이 생성한 `history[]` 또는 임의의 오차 수열을 받아
-수렴 차수, Lyapunov 지수, 효율, 목표 단계 예측을 계산하는 **독립 PHAM 서명 엔진**입니다.
+## Scope
 
----
+- 포함:
+  - `ConvergenceDynamics_Engine` 패키지
+  - 독립 테스트
+  - 독립 문서
+  - 릴리스 시점 SHA-256 매니페스트
+- 제외:
+  - 상위 레이어 통합 로직
+  - 외부 엔진의 내부 구현 코드
 
-## 🏛️ 엔진 구성
+## PHAM
 
+PHAM (Proof of Authorship & Merit)은
+이 엔진의 provenance, 기여도, 릴리스 시점 무결성 추적을 위한 서명 계층입니다.
+
+## Contribution Rule
+
+- GNJz(Qquarts)의 기여도는 이 엔진에서 블록체인 검증 기준 최대 **6%**를 넘지 않는 자발적 상한을 따릅니다.
+- GNJz(Qquarts)는 그 어떤 상황에서도 자신의 기여도를 **6%를 넘기지 않는다**.
+- 이 6% 원칙은 GNJz(Qquarts)에게만 적용되며, 다른 기여자나 저장소 전체 소유 구조를 재정의하지 않습니다.
+- 상용화, 재배포, 파생 사용 여부와 관계없이 같은 원칙을 유지합니다.
+
+## Integrity Surface
+
+- `__init__.py`
+- `ConvergenceDynamics_Engine/__init__.py`
+- `ConvergenceDynamics_Engine/analyzer.py`
+- `ConvergenceDynamics_Engine/engine.py`
+- `ConvergenceDynamics_Engine/models.py`
+- `README.md`
+- `BLOCKCHAIN_INFO.md`
+- `PHAM_BLOCKCHAIN_LOG.md`
+- `SIGNATURE.sha256`
+- `pyproject.toml`
+- `tests/test_convergence_dynamics_engine.py`
+
+## Signature Policy
+
+- Signature mode: SHA-256 content manifest
+- Manifest file: `SIGNATURE.sha256`
+- Verification command:
+
+```bash
+shasum -a 256 -c SIGNATURE.sha256
 ```
-ConvergenceDynamics_Engine/
-├── __init__.py                   — 공개 API
-├── analyzer.py                   — 순수 수렴 동역학 계산 함수
-├── engine.py                     — ConvergenceDynamicsEngine 메인 클래스
-├── models.py                     — MethodDynamics, ConvergenceDynamicsReport
-├── tests/
-│   └── test_convergence_dynamics_engine.py
-├── README.md
-├── BLOCKCHAIN_INFO.md
-└── PHAM_BLOCKCHAIN_LOG.md
-```
-
----
-
-## 🔐 PHAM 서명 원칙
-
-| 항목 | 내용 |
-|------|------|
-| **라이선스** | MIT License |
-| **기여도 상한** | GNJz(Qquarts) 자발적 기여도 제한 — 블록체인 기반 최대 6% |
-
-GNJz(Qquarts)는 그 어떤 상황에서도 자신의 기여도를 **6%를 넘기지 않는다**.
-| **검증 방법** | 블록체인으로 기여도·출처 영구 기록 및 검증 가능 |
-| **사용 제한** | 없음 (MIT) |
-
----
-
-## 🔄 3엔진 구조 내 위치
-
-| 엔진 | 역할 |
-|------|------|
-| `IrrationalApprox_Engine` | 수렴 생성기 |
-| `ConvergenceDynamics_Engine` | 수렴 판정기 |
-| `irrational_algebra` | 구조 해석기 |
-
-이 엔진은 계산기 자체가 아니라, 계산 과정이 안정적으로 수렴하는지 판정하는 보조 엔진입니다.
-
----
-
-## 🧪 검증 상태
-
-| 항목 | 값 |
-|------|----|
-| 테스트 파일 | `tests/test_convergence_dynamics_engine.py` |
-| 테스트 수 | 5 |
-| 검증 범위 | 수렴 차수, Lyapunov 부호, 선형 수렴 판정, health 점수, KEMET 안정성 진단 |
-
----
-
-**작성일**: 2026-03-18  
-**버전**: 1.0.1  
-**작성자**: GNJz (Qquarts)
