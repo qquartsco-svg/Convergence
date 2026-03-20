@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ConvergenceDynamics_Engine"
+version = "1.0.0"
+description = "Standalone convergence dynamics analysis engine"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "GNJz (Qquarts)" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools]
+packages = ["ConvergenceDynamics_Engine"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
